@@ -59,7 +59,7 @@ def extract_youtube_audio_and_metadata(url: str, output_dir: str = None) -> dict
     incoming_dir = os.path.join(repo_root, "data", "incoming_audio")
 
     # Reassemble chunked uploads (e.g., <vid>_audio.mp3.part000, .part001) uploaded from web dashboard
-    for ext in ["mp3", "m4a", "wav", "webm", "opus"]:
+    for ext in ["mp3", "m4a", "wav", "webm", "opus", "mpeg", "mpg"]:
         parts = sorted(glob.glob(os.path.join(incoming_dir, f"{video_id}_audio.{ext}.part*")))
         if parts:
             joined_path = os.path.join(output_dir, f"{video_id}_source.{ext}")
@@ -77,7 +77,7 @@ def extract_youtube_audio_and_metadata(url: str, output_dir: str = None) -> dict
         os.path.join(incoming_dir, f"{video_id}_audio.mp3"),
         os.path.join(output_dir, f"{video_id}_source.mp3"),
     ]
-    for ext in ["m4a", "wav", "webm", "opus"]:
+    for ext in ["m4a", "wav", "webm", "opus", "mpeg", "mpg"]:
         raw_in = os.path.join(incoming_dir, f"{video_id}_audio.{ext}")
         if os.path.exists(raw_in) and os.path.getsize(raw_in) > 1000:
             mp3_conv = os.path.join(output_dir, f"{video_id}_source.mp3")
@@ -631,8 +631,8 @@ def generate_speaker_badge_overlay(
     draw.text((bar_x + 26, bar_y + 10), display_name, font=font_name, fill=(255, 255, 255, 255))
     draw.text((bar_x + 26, bar_y + 39), role_text, font=font_sub, fill=(255, 218, 64, 245))
 
-    # ── 3. Subtle Top-Right Channel Watermark ("EL ARTE DE LA PSIQUE 2.0") ──────────
-    wm_text = "EL ARTE DE LA PSIQUE 2.0"
+    # ── 3. Subtle Top-Right Channel Watermark ("MENTE LIBRE") ──────────
+    wm_text = "MENTE LIBRE"
     wm_bbox = draw.textbbox((0, 0), wm_text, font=font_wm)
     wm_tw = wm_bbox[2] - wm_bbox[0]
     wm_th = wm_bbox[3] - wm_bbox[1]
