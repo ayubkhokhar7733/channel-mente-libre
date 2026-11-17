@@ -51,28 +51,28 @@ def extract_youtube_audio_and_metadata(url: str, output_dir: str = None) -> dict
 
     print(f"[youtube_extractor] Fetching audio & metadata from: {url}")
 
-    # 0. Check for pre-cached/committed incoming audio (supports single file, multi-part chunks, and any audio format)
-    import glob
     video_id_match = re.search(r'(?:v=|\/)([0-9A-Za-z_-]{11})', url)
     video_id = video_id_match.group(1) if video_id_match else "source"
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # 0. Check for chunked audio files and reassemble them
     incoming_dir = os.path.join(repo_root, "data", "incoming_audio")
+    if os.path.exists(incoming_dir):
+        part_files = sorted([
+            os.path.join(incoming_dir, f)
+            for f in os.listdir(incoming_dir)
+            if f.startswith(f"{video_id}_audio.mp3.part") or (f.startswith(video_id) and ".part" in f)
+        ])
+        assembled_file = os.path.join(incoming_dir, f"{video_id}_audio.mp3")
+        if part_files and not os.path.exists(assembled_file):
+            print(f"[youtube_extractor] Found {len(part_files)} chunks. Reassembling into {assembled_file}...")
+            with open(assembled_file, "wb") as out_f:
+                for p in part_files:
+                    with open(p, "rb") as in_f:
+                        out_f.write(in_f.read())
+            print(f"[youtube_extractor] Reassembled: {assembled_file} ({os.path.getsize(assembled_file)/1024/1024:.2f} MB)")
 
-    # Reassemble chunked uploads (e.g., <vid>_audio.mp3.part000, .part001) uploaded from web dashboard
-    for ext in ["mp3", "m4a", "wav", "webm", "opus", "mpeg", "mpg"]:
-        parts = sorted(glob.glob(os.path.join(incoming_dir, f"{video_id}_audio.{ext}.part*")))
-        if parts:
-            joined_path = os.path.join(output_dir, f"{video_id}_source.{ext}")
-            with open(joined_path, "wb") as out_f:
-                for p in parts:
-                    with open(p, "rb") as pf:
-                        out_f.write(pf.read())
-            print(f"[youtube_extractor] Reassembled {len(parts)} dashboard audio chunks -> {joined_path}")
-            if ext != "mp3":
-                mp3_out = os.path.join(output_dir, f"{video_id}_source.mp3")
-                subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", joined_path, "-vn", "-ab", "192k", mp3_out], check=False)
-            break
-
+    # 0. Check for pre-cached/committed incoming audio (bypasses YouTube bot block completely!)
     cache_candidates = [
         os.path.join(incoming_dir, f"{video_id}_audio.mp3"),
         os.path.join(output_dir, f"{video_id}_source.mp3"),
